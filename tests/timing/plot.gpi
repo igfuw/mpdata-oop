@@ -1,0 +1,127 @@
+set term postscript solid enhanced color size 18cm,18cm 
+set xlabel "grid size (nx=ny)"
+set xrange [32*64 : 2048*4096]
+set grid
+set xtics ("64^2" 64*64, "128^2" 128*128, "256^2" 256*256, "512^2" 512*512, "1024^2" 1024*1024, "2048^2" 2048*2048)
+set encoding utf8
+
+set key samplen .75
+
+set datafile separator ";"
+
+input = '< ./filter.sh'
+n_cols = int(system("./filter.sh | awk 'BEGIN {FS=\";\"} NR==1 {print NF}'"))
+
+hostname = system('hostname')
+cpuvdrid = system('fgrep vendor_id /proc/cpuinfo | uniq | cut -d : -f 2 | tr -d " "')
+cpufmlid = system('fgrep family /proc/cpuinfo | uniq | cut -d : -f 2 | tr -d " "')
+cpumdlid = system('fgrep -v "model name" /proc/cpuinfo | fgrep model | uniq | cut -d : -f 2 | tr -d " "')
+cpubmips = system('fgrep bogomips /proc/cpuinfo | awk ''function round(x, m) { x/=m; return m*int(x+(x<0?-0.5:0.5));} { printf("%d\n", round($3,10)); }'' | uniq')
+infostr = "host=" . hostname . "-cpu=" . cpuvdrid . "-" . cpufmlid . "-" . cpumdlid . "-bogomips=" . cpubmips
+
+sizeof_double = 8
+gridsize(nx, ny) = nx * ny
+kB2B(mm) = mm * 1024. 
+memnorm(peakrss, nx, ny) = kB2B(peakrss) / ((2*gridsize(nx+2, ny+2) + 3*gridsize(nx+1, nx+2) + 3*gridsize(nx+2, nx+1)) * sizeof_double)
+s2us(tm) = tm / 1e-6
+cpunorm(cputime, nx, ny, nt) = s2us(cputime / gridsize(nx, ny) / nt)
+
+set key top right
+
+set ylabel "ratio of peak memory use (rss) to nominal data size"
+set logscale xy
+set yrange [1:100]
+set ytics ("1.00" 1,1.25,"1.50" 1.5,1.75,"2.00" 2,10,100)
+#set ytics auto
+set output 'plot-mem-' . infostr . '.eps'
+print "creating mem plot..."
+plot \
+  input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):(memnorm($11, $3, $5)) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+  input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):(memnorm($11, $3, $5)) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+  input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):(memnorm($11, $3, $5)) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+  input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):(memnorm($11, $3, $5)) with linespoints pt 5 linecolor rgb "blue" lw 1 title 'Python / CPython'   , \
+  input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):(memnorm($11, $3, $5)) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'      
+
+cpulabel = system('fgrep "model name" /proc/cpuinfo | uniq | cut -d : -f 2 | tr -s " " | mawk ''{ gsub("\(TM\)","^{^{_{_{TM}}}} "); gsub("\(tm\)","^{^{_{_{TM}}}} "); gsub("\(R\)","^{®}"); print; }''')
+set title cpulabel
+
+set key top left
+
+set ylabel "CPU time per timestep per grid point [{/Symbol m}s]"
+unset logscale y
+set yrange [0:1.4<*]
+set ytics auto
+set output 'plot-cpu-' . infostr . '.eps'
+print "creating cpu plot..."
+plot \
+  input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):(cpunorm($13-column(n_cols), $3, $5, $7)) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+  input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):(cpunorm($13-column(n_cols), $3, $5, $7)) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+  input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):(cpunorm($13-column(n_cols), $3, $5, $7)) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+  input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):(cpunorm($13-column(n_cols), $3, $5, $7)) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+  input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):(cpunorm($13-column(n_cols), $3, $5, $7)) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+if (0) { print "creating cache plots..."
+  set ylabel 'cache misses [%]'
+  set output 'plot-cache-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($17) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($17) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($17) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($17) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($17) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'L1 data cache misses [%]'
+  set output 'plot-L1d-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($19) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($19) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($19) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($19) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($19) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'L1 instruction cache misses [%]'
+  set output 'plot-L1i-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($21) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($21) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($21) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($21) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($21) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'LL cache load misses [%]'
+  set output 'plot-LLC-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($23) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($23) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($23) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($23) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($23) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'data TLB misses [%]'
+  set output 'plot-dTLB-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($25) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($25) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($25) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($25) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($25) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'instruction TLB misses [%]'
+  set output 'plot-iTLB-' . infostr . '.eps'
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($27) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($27) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($27) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($27) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($27) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+
+  set ylabel 'mean instruction count per cycle'
+  set output 'plot-ipc-' . infostr . '.eps'
+  set yrange [.5<*:1.8<*]
+  plot \
+    input.'|fgrep gcc|fgrep it=\;3' using (gridsize($3,$5)):($29) with linespoints pt 1 linecolor rgb "black" lw 2 title 'C++ / GCC'         , \
+    input.'|fgrep cxx|fgrep it=\;3' using (gridsize($3,$5)):($29) with linespoints pt 6 linecolor rgb "black" lw 1 title 'C++ / LLVM'         , \
+    input.'|fgrep for|fgrep it=\;3' using (gridsize($3,$5)):($29) with linespoints pt 2 linecolor rgb "red" lw 1 title 'Fortran / GCC'       , \
+    input.'|fgrep pyt|fgrep it=\;3' using (gridsize($3,$5)):($29) with linespoints pt 5 linecolor rgb "blue"  lw 1 title 'Python / CPython'  , \
+    input.'|fgrep pyp|fgrep it=\;3' using (gridsize($3,$5)):($29) with linespoints pt 4 linecolor rgb "blue" lw 2 title 'Python / PyPy'    
+} else { print "skipping cache plots (no data found in the CMake logfile)" }
