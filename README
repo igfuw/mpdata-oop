@@ -4,19 +4,19 @@ of all tests and plots discussed in the paper.
 The commands were tested to work with the following software versions
 (Debian/Ubuntu package names given in parenthesis):
 
-    - Blitz++ 0.10      http://sf.net/projects/blitz/         (libblitz0-dev)
-    - GCC 4.8           http://gcc.gnu.org/         (gcc-snapshot or gcc-4.8)
-    - PyPy 1.9          http://pypy.org/                               (pypy)
-    - NumPy 1.7         http://numpy.org/                      (python-numpy)
-    - CPython 2.7       http://python.org/                           (python)
-    - Clang 3.2         http://clang.llvm.org/                        (clang) 
-    - Boost 1.49        http://boost.org/                      (libboost-dev)
-    - CMake 2.8         http://cmake.org/                             (cmake)
-    - perf 3.2          http://perf.wiki.kernel.org/            (linux-tools)
-    - time 1.7          http://gnu.org/software/time/                  (time)
-    - gnuplot 4.6       http://gnuplot.info/                        (gnuplot)
+    - Blitz++ 0.10      http://sf.net/projects/blitz/        (libblitz0-dev)
+    - GCC 4.8           http://gcc.gnu.org/        (gcc-snapshot or gcc-4.8)
+    - PyPy 1.9          http://pypy.org/                              (pypy)
+    - NumPy 1.7         http://numpy.org/                     (python-numpy)
+    - CPython 2.7       http://python.org/                          (python)
+    - Clang 3.2         http://clang.llvm.org/                       (clang) 
+    - Boost 1.49        http://boost.org/                     (libboost-dev)
+    - CMake 2.8         http://cmake.org/                            (cmake)
+    - perf 3.2          http://perf.wiki.kernel.org/           (linux-tools)
+    - time 1.7          http://gnu.org/software/time/                 (time)
+    - gnuplot 4.6       http://gnuplot.info/                       (gnuplot)
     - gnuplot-iostream  http://www.stahlke.org/dan/gnuplot-iostream/
-                                                           (gnuplot-iostream)
+                                                          (gnuplot-iostream)
 
 Known strict version requirements:
     - Blitz++ >= 0.10
