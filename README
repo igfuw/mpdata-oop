@@ -4,29 +4,27 @@ of all tests and plots discussed in the paper.
 The commands were tested to work with the following software versions
 (Debian/Ubuntu package names given in parenthesis):
 
-    - Blitz++ 0.10      http://sf.net/projects/blitz/                 (libblitz0-dev)
-    - GCC 4.8           http://gcc.gnu.org/                           (gcc-snapshot or gcc-4.8)
-    - PyPy 1.9          http://pypy.org/                              (pypy)
-    - NumPy 1.7         http://numpy.org/                             (python-numpy)
-    - CPython 2.7       http://python.org/                            (python)
+    - Blitz++ 0.10      http://sf.net/projects/blitz/         (libblitz0-dev)
+    - GCC 4.8           http://gcc.gnu.org/         (gcc-snapshot or gcc-4.8)
+    - PyPy 1.9          http://pypy.org/                               (pypy)
+    - NumPy 1.7         http://numpy.org/                      (python-numpy)
+    - CPython 2.7       http://python.org/                           (python)
     - Clang 3.2         http://clang.llvm.org/                        (clang) 
-    - Boost 1.49        http://boost.org/                             (libboost-dev)
+    - Boost 1.49        http://boost.org/                      (libboost-dev)
     - CMake 2.8         http://cmake.org/                             (cmake)
-    - perf 3.2          http://perf.wiki.kernel.org/                  (linux-tools)
-    - time 1.7          http://gnu.org/software/time/                 (time)
-    - gnuplot 4.6       http://gnuplot.info/                          (gnuplot)
-    - gnuplot-iostream  http://www.stahlke.org/dan/gnuplot-iostream/  (gnuplot-iostream*)
-
-    * Debian package announced (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=691272)
-      but still not release at the time of writing
+    - perf 3.2          http://perf.wiki.kernel.org/            (linux-tools)
+    - time 1.7          http://gnu.org/software/time/                  (time)
+    - gnuplot 4.6       http://gnuplot.info/                        (gnuplot)
+    - gnuplot-iostream  http://www.stahlke.org/dan/gnuplot-iostream/
+                                                           (gnuplot-iostream)
 
 Known strict version requirements:
     - Blitz++ >= 0.10
     - GCC >= 4.8
     - CMake != 2.8.10 (see note below)
 
-To compile the C++ and Fortran programs, please start with running the cmake optionally
-pointing it to any custom compiler or library locations: 
+To compile the C++ and Fortran programs, please start with running the cmake 
+optionally pointing it to any custom compiler or library locations: 
 
     $ cmake . \ 
       -DCMAKE_CXX_COMPILER=/usr/lib/gcc-snapshot/bin/g++ \
@@ -38,9 +36,9 @@ A single "make" call should suffice (and produce, among other binaries:
 
     $ make
 
-In order to reproduce the tests comparing GCC and Clang, a second CMake run is needed
-(beware that this will clear all custom CMake settings - if the first CMake run needed
-any additional options, these have to be repeated again):
+In order to reproduce the tests comparing GCC and Clang, a second CMake run 
+is needed (beware this will clear all custom CMake settings - if the first 
+CMake run needed any additional options, these have to be repeated again):
 
     $ cmake . \ 
       -DCMAKE_CXX_COMPILER=clang++ \
@@ -49,69 +47,67 @@ any additional options, these have to be repeated again):
 (CMake 2.8.10 has a bug causing it to enter an infinite loop here, 
 erasing CMakeFiles directory helps) 
 
-A second make run will invoke compilation with clang of the ./cpp/test-cpp-nongnu
+A second make run will compile ./cpp/test-cpp-nongnu with clang
 
     $ make
 
-To check correctness of all five set-ups (GCC, Clang, gfortran, CPython and PyPy)
-one may run sanity tests:
+To check correctness of all five set-ups (GCC, Clang, gfortran, 
+CPython and PyPy), one may run sanity tests:
 
     $ cd tests/sanity
     $ make test
     $ cd ../../
 
-In order to run the timing tests discussed in the paper, it is needed first to generate
-the test data by calling:
+In order to run the timing tests discussed in the paper, it is needed 
+first to generate the test data by calling:
 
     $ ./testgen.sh
 
-CMake needs to be called again to add newly generated files to its list of tests:
+CMake has to be called again to add the new files to its list of tests:
 
     $ cmake .
 
-Finally, the timing tests may be executed by typing "make test" in tests/timing:
+Finally, to start the timing tests, type "make test" in tests/timing:
 
     $ cd tests/timing
     $ make test
 
-Plots presented in the paper (as well as several other plots showing cache usage
-statistics) can be generated with gnuplot by typing:
+Plots presented in the paper (as well as several other plots showing 
+cache usage statistics) can be generated with gnuplot by typing:
 
     $ gnuplot plot.gpi
 
--------------------------------------------------------------------------------------------
-List of files with brief description (CMakeLists.txt files contain instructions for CMake):
+-----------------------------------------------------------------------
+List of files with brief description 
 .
 ├── CMakeLists.txt 
 ├── README 
-├── AUTHORS .......................... list of authors, copyright and licensing information
-├── COPYING ........................................................... GPL v3 license text
 ├── cpp 
 │   ├── CMakeLists.txt 
-│   ├── inout.cpp ........ C++ program generating data for timing tests (uses listings.hpp)
-│   ├── listings.hpp .......................... C++ code presented in listings in the paper
-│   ├── plot.cpp ...................... C++ program generating Figure 2 (uses listings.hpp)
-│   └── test.cpp ....... C++ program performing sanity and timing tests (uses listings.hpp)
+│   ├── inout.cpp ........ C++ program generating data for timing tests
+│   ├── listings.hpp ...... C++ code presented in listings in the paper
+│   ├── plot.cpp ...................... C++ program generating Figure 2
+│   └── test.cpp ....... C++ program performing sanity and timing tests
 ├── for 
 │   ├── CMakeLists.txt 
-│   ├── listings.f .................... Fortran code presented in the listings in the paper
-│   ├── test_arrvec.f .............. a unit test for the arrvec_t type (run with make test)
-│   └── test.f ....... Fortran program performing sanity and timing tests (uses listings.f)
+│   ├── listings.f ................ Fortran code presented in the paper
+│   ├── test_arrvec.f ............... a unit test for the arrvec_t type
+│   └── test.f ..... Fortran program performing sanity and timing tests 
 ├── pyt
-│   ├── listings.py .................... Python code presented in the listings in the paper
-│   └── test.py ...... Python program performing sanity and timing tests (uses listings.py)
-├── testgen.sh ............................... bash script generating data for timing tests
+│   ├── listings.py ................ Python code presented in the paper
+│   └── test.py ..... Python program performing sanity and timing tests
+├── testgen.sh ........... bash script generating data for timing tests
 └── tests
     ├── CMakeLists.txt 
     ├── sanity
     │   ├── CMakeLists.txt 
-    │   ├── *:in .............................................. input data for sanity tests
-    │   └── *:out .................................. data for verifying sanity tests output
+    │   ├── *:in .......................... input data for sanity tests
+    │   └── *:out .............. data for verifying sanity tests output
     └── timing 
         ├── CMakeLists.txt
-        ├── filter0.awk ............. 0-th stage of an AWK scripts chain parsing CMake logs
-        ├── filter1.awk ............. 1-st stage of an AWK scripts chain parsing CMake logs
-        ├── filter2.awk ............. 2-nd stage of an AWK scripts chain parsing CMake logs
-        ├── filter3.awk ............. 3-rd stage of an AWK scripts chain parsing CMake logs
-        ├── filter.sh .......................... bash script invoking the above AWK scripts
-        └── plot.gpi ............... gnuplot script generating Figures 3-5 (uses filter.sh)
+        ├── filter0.awk .. 0-th stage of AWK scripts parsing CMake logs
+        ├── filter1.awk .. 1-st stage of AWK scripts parsing CMake logs
+        ├── filter2.awk .. 2-nd stage of AWK scripts parsing CMake logs
+        ├── filter3.awk .. 3-rd stage of AWK scripts parsing CMake logs
+        ├── filter.sh ...... bash script invoking the above AWK scripts
+        └── plot.gpi ............ gnuplot script generating Figures 3-5 
